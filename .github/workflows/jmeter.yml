@@ -1,10 +1,14 @@
-name: sterge firme
-on:
-  workflow_dispatch:
+name: Run JMeter Test
+
+on: [push]
+
 jobs:
-  build:
+  jmeter-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: run jmeter on github action
-        uses: sebiboga/run-jmeter-github-action@v0.0.7
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run JMeter Test using Docker
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace justb4/jmeter -n -t delete_companii.jmx
