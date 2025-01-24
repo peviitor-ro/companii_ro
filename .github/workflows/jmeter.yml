@@ -1,0 +1,12 @@
+name: sterge firme
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: run jmeter on github action
+        uses: sebiboga/run-jmeter-github-action@v0.0.5
