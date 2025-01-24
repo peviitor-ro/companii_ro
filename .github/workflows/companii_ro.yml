@@ -1,0 +1,23 @@
+name: Run Companii RO JMeter
+on: 
+  workflow_dispatch:
+
+jobs:
+  jmeter-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Create CSV directory
+        run: mkdir -p csv
+
+      - name: Download CSV file
+        run: |
+          curl -L -o csv/firme.csv "https://data.gov.ro/dataset/243787b1-a720-4adc-97e6-e1fad373816e/resource/3043787a-832a-4ccc-9712-f10da0092e14/download/3firme_neradiate_cu_sediu_18-12-2024.csv"
+
+      - name: List files in CSV directory
+        run: ls -l csv/
+      - name: Run JMeter companii_ro.jmx using Docker
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace justb4/jmeter -n -t companii_ro.jmx -Jcsv_data=csv/firme.csv
