@@ -1,0 +1,15 @@
+name: Run Companii RO JMeter Test
+
+on: 
+  workflow_dispatch:
+
+jobs:
+  jmeter-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run JMeter Test using Docker
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace justb4/jmeter -n -t companii_ro.jmx
