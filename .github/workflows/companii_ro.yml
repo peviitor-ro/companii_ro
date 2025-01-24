@@ -18,3 +18,6 @@ jobs:
 
       - name: List files in CSV directory
         run: ls -l csv/
+      - name: Run JMeter companii_ro.jmx using Docker
+        run: |
+          docker run --rm -v ${PWD}:/workspace -w /workspace justb4/jmeter -n -t companii_ro.jmx -Jcsv_data=csv/firme.csv
