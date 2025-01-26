@@ -17,79 +17,83 @@ async function searchFirma() {
         displayFirmDetails(data);
     } catch (error) {
         console.error('Search failed:', error);
-        const errorMessage = document.getElementById('errorMessage');
-        if (errorMessage) {
-            errorMessage.textContent = `Search failed: ${error.message}`;
-        } else {
-            console.error('Error message container not found');
-        }
+        document.getElementById('errorMessage').textContent = `Search failed: ${error.message}`;
     }
 }
 
 function displayFirmDetails(firms) {
     const container = document.getElementById('firmDetailsContainer');
-    if (!container) {
-        console.error('Firm details container not found');
-        return;
-    }
     container.innerHTML = '';
 
-    firms.forEach((firm, index) => {
+    firms.forEach(firm => {
         const details = document.createElement('div');
-        details.style.marginBottom = "20px";
+        details.className = 'firm-details';
+        details.innerHTML = `<strong>ID:</strong> ${firm.id}<br>`;
 
-        Object.keys(firm).forEach(key => {
-            const value = Array.isArray(firm[key]) ? firm[key].join(', ') : firm[key];
-            const element = document.createElement('p');
-            element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value}`;
-            details.appendChild(element);
-        });
-
-        // Adding a button for updating the website for each firm
-        const updateButton = document.createElement('button');
-        updateButton.textContent = 'Update Website';
-        updateButton.onclick = function() {
-            addWebsite(firm.id); // Assuming 'id' is the unique identifier for firms
-        };
-        details.appendChild(updateButton);
-
-        container.appendChild(details);
-        
-        if (index !== firms.length - 1) {
-            container.appendChild(document.createElement('hr'));
+        if (firm.name) {
+            details.innerHTML += `<strong>Name:</strong> ${firm.name}<br>`;
         }
+        
+        const websiteInput = document.createElement('input');
+        websiteInput.type = 'text';
+        websiteInput.value = firm.website || '';
+        websiteInput.placeholder = 'Adaugă/Modifică website';
+        
+        const updateButton = document.createElement('button');
+        updateButton.textContent = 'Update';
+        updateButton.onclick = () => updateWebsite(firm.id, websiteInput.value);
+
+        const deleteButton = document.createElement('button');
+        deleteButton.innerHTML = '&#x274C;'; // Delete icon
+        deleteButton.onclick = () => deleteWebsite(firm.id);
+
+        details.appendChild(websiteInput);
+        details.appendChild(updateButton);
+        details.appendChild(deleteButton);
+        container.appendChild(details);
+
+        container.appendChild(document.createElement('hr')); // Adds a horizontal line between firms
     });
 }
 
-async function addWebsite(firmId) {
-    const website = document.getElementById('websiteUrl').value.trim();
-    const bodyData = { id: firmId, website };
-
+async function updateWebsite(firmId, website) {
     try {
-        const response = await fetch('https://api.peviitor.ro/v6/firme/website/add/', {
+        const response = await fetch(`https://api.peviitor.ro/v6/firme/website/add/`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(bodyData),
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: firmId, website }),
             mode: 'cors'
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to add website, server responded with: ${response.status}`);
+            throw new Error(`Failed to update website, server responded with: ${response.status}`);
         }
 
-        await response.json(); // Confirm success
-        alert('Website updated successfully for Firm ID: ' + firmId);
-        document.getElementById('websiteUrl').value = '';
-        searchFirma(); // Re-fetch to update display
+        alert('Website updated successfully!');
+        searchFirma(); // Refresh the display
     } catch (error) {
-        console.error('Failed to add website:', error);
-        const errorMessage = document.getElementById('errorMessage');
-        if (errorMessage) {
-            errorMessage.textContent = `Failed to add website: ${error.message}`;
-        } else {
-            console.error('Error message container for adding website not found');
+        console.error('Failed to update website:', error);
+        document.getElementById('errorMessage').textContent = `Failed to update website: ${error.message}`;
+    }
+}
+
+async function deleteWebsite(firmId) {
+    try {
+        const response = await fetch(`https://api.peviitor.ro/v6/firme/website/delete/`, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: firmId }),
+            mode: 'cors'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to delete website, server responded with: ${response.status}`);
         }
+
+        alert('Website deleted successfully!');
+        searchFirma(); // Refresh the display
+    } catch (error) {
+        console.error('Failed to delete website:', error);
+        document.getElementById('errorMessage').textContent = `Failed to delete website: ${error.message}`;
     }
 }
