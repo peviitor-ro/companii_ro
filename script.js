@@ -28,8 +28,21 @@ function displayFirmDetails(firms) {
     firms.forEach((firm) => {
         const details = document.createElement('div');
         details.className = 'firm-details';
-        details.innerHTML = `<strong>ID:</strong> ${firm.id}<br><strong>Name:</strong> ${firm.name || 'N/A'}<br>`;
+        
+        // Iterate through all keys in each firm object
+        for (const key in firm) {
+            if (firm.hasOwnProperty(key)) {
+                const value = firm[key];
+                const element = document.createElement('p');
+                element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value}`;
+                details.appendChild(element);
+            }
+        }
 
+        const inputContainer = document.createElement('div');
+        inputContainer.className = 'website-update-container';
+
+        // Input for updating website
         const websiteInput = document.createElement('input');
         websiteInput.type = 'text';
         websiteInput.value = firm.website || '';
@@ -39,9 +52,11 @@ function displayFirmDetails(firms) {
         updateButton.textContent = 'Update';
         updateButton.onclick = () => updateWebsite(firm.id, websiteInput.value);
 
-        details.appendChild(websiteInput);
-        details.appendChild(updateButton);
+        inputContainer.appendChild(websiteInput);
+        inputContainer.appendChild(updateButton);
+        details.appendChild(inputContainer);
 
+        // Conditional delete button
         if (firm.website) {
             const deleteButton = document.createElement('button');
             deleteButton.innerHTML = '&#x274C;'; // Unicode for a delete icon
