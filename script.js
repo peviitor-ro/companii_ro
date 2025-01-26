@@ -33,7 +33,7 @@ function displayFirmDetails(firms) {
         return;
     }
     container.innerHTML = '';
-    
+
     firms.forEach((firm, index) => {
         const details = document.createElement('div');
         details.style.marginBottom = "20px";
@@ -45,6 +45,14 @@ function displayFirmDetails(firms) {
             details.appendChild(element);
         });
 
+        // Adding a button for updating the website for each firm
+        const updateButton = document.createElement('button');
+        updateButton.textContent = 'Update Website';
+        updateButton.onclick = function() {
+            addWebsite(firm.id); // Assuming 'id' is the unique identifier for firms
+        };
+        details.appendChild(updateButton);
+
         container.appendChild(details);
         
         if (index !== firms.length - 1) {
@@ -53,10 +61,9 @@ function displayFirmDetails(firms) {
     });
 }
 
-async function addWebsite() {
-    const id = document.getElementById('searchId').value.trim();
+async function addWebsite(firmId) {
     const website = document.getElementById('websiteUrl').value.trim();
-    const bodyData = { id, website };
+    const bodyData = { id: firmId, website };
 
     try {
         const response = await fetch('https://api.peviitor.ro/v6/firme/website/add/', {
@@ -73,7 +80,7 @@ async function addWebsite() {
         }
 
         await response.json(); // Confirm success
-        alert('Website added successfully!');
+        alert('Website updated successfully for Firm ID: ' + firmId);
         document.getElementById('websiteUrl').value = '';
         searchFirma(); // Re-fetch to update display
     } catch (error) {
