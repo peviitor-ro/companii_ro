@@ -7,11 +7,8 @@ async function searchFirma() {
 
     try {
         const response = await fetch(`https://api.peviitor.ro/v6/firme/qsearch/?q=${encodeURIComponent(id)}`, {
-            method: 'GET',
-            mode: 'cors',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+            method: 'GET' // Using GET request since we're only fetching data
+            // Removed setting 'Content-Type' header as it's a GET request
         });
 
         if (!response.ok) {
@@ -20,7 +17,8 @@ async function searchFirma() {
 
         const data = await response.json();
         if (data.length === 0) {
-            throw new Error('No firm found with given ID');
+            document.getElementById('firmDetailsContainer').textContent = 'No firm found with given ID.';
+            return;
         }
         
         displayFirmDetails(data);
@@ -40,33 +38,29 @@ function displayFirmDetails(firms) {
 
         for (const key in firm) {
             if (firm.hasOwnProperty(key)) {
-                const value = firm[key];
+                const value = Array.isArray(firm[key]) ? firm[key].join(', ') : firm[key];
                 const element = document.createElement('p');
-                if (Array.isArray(value)) {
-                    element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value.join(', ')}`;
-                } else {
-                    element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value}`;
-                }
+                element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value}`;
                 detailsDiv.appendChild(element);
             }
         }
 
-        if (firm.website && firm.website.length > 0) {
-            const websiteInput = document.createElement('input');
-            websiteInput.type = 'text';
-            websiteInput.value = firm.website[0]; // assuming first entry is the main website
-            websiteInput.placeholder = 'Add/Update website';
+        const websiteInput = document.createElement('input');
+        websiteInput.type = 'text';
+        websiteInput.value = firm.website ? firm.website[0] : '';
+        websiteInput.placeholder = 'Add/Update website';
+        
+        const updateButton = document.createElement('button');
+        updateButton.textContent = 'Update';
+        updateButton.onclick = () => updateWebsite(firm.id, websiteInput.value);
+        
+        detailsDiv.appendChild(websiteInput);
+        detailsDiv.appendChild(updateButton);
 
-            const updateButton = document.createElement('button');
-            updateButton.textContent = 'Update';
-            updateButton.onclick = () => updateWebsite(firm.id, websiteInput.value);
-
+        if (firm.website) {
             const deleteButton = document.createElement('button');
             deleteButton.innerHTML = '&#x274C;';
             deleteButton.onclick = () => deleteWebsite(firm.id);
-
-            detailsDiv.appendChild(websiteInput);
-            detailsDiv.appendChild(updateButton);
             detailsDiv.appendChild(deleteButton);
         }
 
@@ -82,8 +76,7 @@ async function updateWebsite(firmId, website) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ id: firmId, website: website }),
-            mode: 'cors'
+            body: JSON.stringify({ id: firmId, website: website })
         });
 
         if (!response.ok) {
@@ -105,8 +98,7 @@ async function deleteWebsite(firmId) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ id: firmId }),
-            mode: 'cors'
+            body: JSON.stringify({ id: firmId })
         });
 
         if (!response.ok) {
