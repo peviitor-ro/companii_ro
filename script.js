@@ -1,12 +1,11 @@
-// script.js
-
 async function searchFirma() {
-    const id = document.getElementById('searchId').value;
+    const id = document.getElementById('searchId').value.trim();
     try {
-        const response = await fetch(`https://api.peviitor.ro/v6/firme/qsearch/?q=${id}`, {
+        const response = await fetch(`https://api.peviitor.ro/v6/firme/qsearch/?q=${encodeURIComponent(id)}`, {
             method: 'GET',
             mode: 'cors'
         });
+
         if (!response.ok) {
             throw new Error(`HTTP status: ${response.status}`);
         }
@@ -15,35 +14,43 @@ async function searchFirma() {
         if (data.length === 0) {
             throw new Error('No firm found with given ID');
         }
-        displayFirmDetails(data[0]);
+        displayFirmDetails(data);
     } catch (error) {
         console.error('Search failed:', error);
-        alert(`Search failed: ${error.message}`);
+        document.getElementById('errorMessage').textContent = `Search failed: ${error.message}`;
     }
 }
 
-function displayFirmDetails(firm) {
-    const details = document.getElementById('firmDetails');
-    details.innerHTML = '';
-    details.style.display = 'block';
+function displayFirmDetails(firms) {
+    const container = document.getElementById('firmDetailsContainer');
+    container.innerHTML = ''; // Clear previous results
 
-    // Dinamic generate HTML based on available firm data and style it
-    Object.keys(firm).forEach(key => {
-        const value = Array.isArray(firm[key]) ? firm[key].join(', ') : firm[key];
-        const element = document.createElement('p');
-        element.style.color = "#333333"; // Set text color
-        element.style.background = "#f8f8f8"; // Set background color
-        element.style.padding = "10px"; // Set padding
-        element.style.margin = "5px 0"; // Set margin
-        element.style.borderRadius = "5px"; // Set border radius
-        element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value}`;
-        details.appendChild(element);
+    firms.forEach((firm, index) => {
+        const details = document.createElement('div');
+        details.style.padding = "10px";
+        details.style.margin = "10px 0";
+        details.style.border = "1px solid #ccc";
+        details.style.borderRadius = "5px";
+
+        Object.keys(firm).forEach(key => {
+            const value = Array.isArray(firm[key]) ? firm[key].join(', ') : firm[key];
+            const element = document.createElement('p');
+            element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value}`;
+            details.appendChild(element);
+        });
+
+        if (index < firms.length - 1) {
+            const delimiter = document.createElement('hr'); // Delimiter
+            details.appendChild(delimiter);
+        }
+        
+        container.appendChild(details);        
     });
 }
 
 async function addWebsite() {
-    const id = document.getElementById('searchId').value;
-    const website = document.getElementById('websiteUrl').value;
+    const id = document.getElementById('searchId').value.trim();
+    const website = document.getElementById('websiteUrl').value.trim();
     const bodyData = { id, website };
 
     try {
@@ -60,13 +67,12 @@ async function addWebsite() {
             throw new Error(`Failed to add the website, server responded with: ${response.status}`);
         }
 
-        await response.json(); // Assuming the response may not be significant for re-display
+        await response.json();
         alert('Website added successfully!');
-        document.getElementById('websiteUrl').value = ''; // Clears the input field after successful submission
-        
-        searchFirma(); // Re-fetch and display all company data including the new website
+        document.getElementById('websiteUrl').value = '';
+        searchFirma(); // Re-fetch and display all firms including the new website data
     } catch (error) {
         console.error('Failed to add website:', error);
-        alert(`Failed to add website: ${error.message}`);
+        document.getElementById('errorMessage').textContent = `Failed to add website: ${error.message}`;
     }
 }
