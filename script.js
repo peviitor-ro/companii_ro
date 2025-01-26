@@ -3,7 +3,7 @@
 async function searchFirma() {
     const id = document.getElementById('searchId').value;
     try {
-        const response = await fetch(`https://api.peviitor.ro/v6/firme/search/?id=${id}`, {
+        const response = await fetch(`https://api.peviitor.ro/v6/firme/qsearch/?q=${id}`, {
             method: 'GET',
             mode: 'cors'
         });
