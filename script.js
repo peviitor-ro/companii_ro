@@ -9,7 +9,7 @@ async function searchFirma() {
         if (!response.ok) {
             throw new Error(`HTTP status: ${response.status}`);
         }
-        
+
         const data = await response.json();
         if (data.length === 0) {
             throw new Error('No firm found with given ID');
@@ -17,20 +17,26 @@ async function searchFirma() {
         displayFirmDetails(data);
     } catch (error) {
         console.error('Search failed:', error);
-        document.getElementById('errorMessage').textContent = `Search failed: ${error.message}`;
+        const errorMessage = document.getElementById('errorMessage');
+        if (errorMessage) {
+            errorMessage.textContent = `Search failed: ${error.message}`;
+        } else {
+            console.error('Error message container not found');
+        }
     }
 }
 
 function displayFirmDetails(firms) {
     const container = document.getElementById('firmDetailsContainer');
-    container.innerHTML = ''; // Clear previous results
-
+    if (!container) {
+        console.error('Firm details container not found');
+        return;
+    }
+    container.innerHTML = '';
+    
     firms.forEach((firm, index) => {
         const details = document.createElement('div');
-        details.style.padding = "10px";
-        details.style.margin = "10px 0";
-        details.style.border = "1px solid #ccc";
-        details.style.borderRadius = "5px";
+        details.style.marginBottom = "20px";
 
         Object.keys(firm).forEach(key => {
             const value = Array.isArray(firm[key]) ? firm[key].join(', ') : firm[key];
@@ -39,12 +45,11 @@ function displayFirmDetails(firms) {
             details.appendChild(element);
         });
 
-        if (index < firms.length - 1) {
-            const delimiter = document.createElement('hr'); // Delimiter
-            details.appendChild(delimiter);
-        }
+        container.appendChild(details);
         
-        container.appendChild(details);        
+        if (index !== firms.length - 1) {
+            container.appendChild(document.createElement('hr'));
+        }
     });
 }
 
@@ -64,15 +69,20 @@ async function addWebsite() {
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to add the website, server responded with: ${response.status}`);
+            throw new Error(`Failed to add website, server responded with: ${response.status}`);
         }
 
-        await response.json();
+        await response.json(); // Confirm success
         alert('Website added successfully!');
         document.getElementById('websiteUrl').value = '';
-        searchFirma(); // Re-fetch and display all firms including the new website data
+        searchFirma(); // Re-fetch to update display
     } catch (error) {
         console.error('Failed to add website:', error);
-        document.getElementById('errorMessage').textContent = `Failed to add website: ${error.message}`;
+        const errorMessage = document.getElementById('errorMessage');
+        if (errorMessage) {
+            errorMessage.textContent = `Failed to add website: ${error.message}`;
+        } else {
+            console.error('Error message container for adding website not found');
+        }
     }
 }
