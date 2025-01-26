@@ -1,19 +1,28 @@
 async function searchFirma() {
     const id = document.getElementById('searchId').value.trim();
+    if (!id) {
+        alert("Please enter an ID to search.");
+        return;
+    }
+
     try {
         const response = await fetch(`https://api.peviitor.ro/v6/firme/qsearch/?q=${encodeURIComponent(id)}`, {
             method: 'GET',
-            mode: 'cors'
+            mode: 'cors',
+            headers: {
+                'Content-Type': 'application/json'
+            }
         });
 
         if (!response.ok) {
-            throw new Error(`HTTP status: ${response.status}`);
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
 
         const data = await response.json();
         if (data.length === 0) {
             throw new Error('No firm found with given ID');
         }
+        
         displayFirmDetails(data);
     } catch (error) {
         console.error('Search failed:', error);
@@ -26,46 +35,43 @@ function displayFirmDetails(firms) {
     container.innerHTML = '';
 
     firms.forEach((firm) => {
-        const details = document.createElement('div');
-        details.className = 'firm-details';
-        
-        // Iterate through all keys in each firm object
+        const detailsDiv = document.createElement('div');
+        detailsDiv.className = 'firm-details';
+
         for (const key in firm) {
             if (firm.hasOwnProperty(key)) {
                 const value = firm[key];
                 const element = document.createElement('p');
-                element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value}`;
-                details.appendChild(element);
+                if (Array.isArray(value)) {
+                    element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value.join(', ')}`;
+                } else {
+                    element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value}`;
+                }
+                detailsDiv.appendChild(element);
             }
         }
 
-        const inputContainer = document.createElement('div');
-        inputContainer.className = 'website-update-container';
+        if (firm.website && firm.website.length > 0) {
+            const websiteInput = document.createElement('input');
+            websiteInput.type = 'text';
+            websiteInput.value = firm.website[0]; // assuming first entry is the main website
+            websiteInput.placeholder = 'Add/Update website';
 
-        // Input for updating website
-        const websiteInput = document.createElement('input');
-        websiteInput.type = 'text';
-        websiteInput.value = firm.website || '';
-        websiteInput.placeholder = 'Add/Update website';
+            const updateButton = document.createElement('button');
+            updateButton.textContent = 'Update';
+            updateButton.onclick = () => updateWebsite(firm.id, websiteInput.value);
 
-        const updateButton = document.createElement('button');
-        updateButton.textContent = 'Update';
-        updateButton.onclick = () => updateWebsite(firm.id, websiteInput.value);
-
-        inputContainer.appendChild(websiteInput);
-        inputContainer.appendChild(updateButton);
-        details.appendChild(inputContainer);
-
-        // Conditional delete button
-        if (firm.website) {
             const deleteButton = document.createElement('button');
-            deleteButton.innerHTML = '&#x274C;'; // Unicode for a delete icon
+            deleteButton.innerHTML = '&#x274C;';
             deleteButton.onclick = () => deleteWebsite(firm.id);
-            details.appendChild(deleteButton);
+
+            detailsDiv.appendChild(websiteInput);
+            detailsDiv.appendChild(updateButton);
+            detailsDiv.appendChild(deleteButton);
         }
 
-        container.appendChild(details);
-        container.appendChild(document.createElement('hr')); // Separates each firm entry
+        container.appendChild(detailsDiv);
+        container.appendChild(document.createElement('hr'));
     });
 }
 
@@ -73,8 +79,10 @@ async function updateWebsite(firmId, website) {
     try {
         const response = await fetch(`https://api.peviitor.ro/v6/firme/website/add/`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: firmId, website }),
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ id: firmId, website: website }),
             mode: 'cors'
         });
 
@@ -83,7 +91,7 @@ async function updateWebsite(firmId, website) {
         }
 
         alert('Website updated successfully!');
-        searchFirma(); // Refresh to see changes
+        searchFirma(); // Refresh to show updated data
     } catch (error) {
         console.error('Failed to update website:', error);
         document.getElementById('errorMessage').textContent = `Failed to update website: ${error.message}`;
@@ -94,7 +102,9 @@ async function deleteWebsite(firmId) {
     try {
         const response = await fetch(`https://api.peviitor.ro/v6/firme/website/delete/`, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json'
+            },
             body: JSON.stringify({ id: firmId }),
             mode: 'cors'
         });
@@ -104,7 +114,7 @@ async function deleteWebsite(firmId) {
         }
 
         alert('Website deleted successfully!');
-        searchFirma(); // Refresh to see changes
+        searchFirma(); // Refresh to show that the website has been removed
     } catch (error) {
         console.error('Failed to delete website:', error);
         document.getElementById('errorMessage').textContent = `Failed to delete website: ${error.message}`;
