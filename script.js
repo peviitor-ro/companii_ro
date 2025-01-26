@@ -25,34 +25,32 @@ function displayFirmDetails(firms) {
     const container = document.getElementById('firmDetailsContainer');
     container.innerHTML = '';
 
-    firms.forEach(firm => {
+    firms.forEach((firm) => {
         const details = document.createElement('div');
         details.className = 'firm-details';
-        details.innerHTML = `<strong>ID:</strong> ${firm.id}<br>`;
+        details.innerHTML = `<strong>ID:</strong> ${firm.id}<br><strong>Name:</strong> ${firm.name || 'N/A'}<br>`;
 
-        if (firm.name) {
-            details.innerHTML += `<strong>Name:</strong> ${firm.name}<br>`;
-        }
-        
         const websiteInput = document.createElement('input');
         websiteInput.type = 'text';
         websiteInput.value = firm.website || '';
-        websiteInput.placeholder = 'Adaugă/Modifică website';
-        
+        websiteInput.placeholder = 'Add/Update website';
+
         const updateButton = document.createElement('button');
         updateButton.textContent = 'Update';
         updateButton.onclick = () => updateWebsite(firm.id, websiteInput.value);
 
-        const deleteButton = document.createElement('button');
-        deleteButton.innerHTML = '&#x274C;'; // Delete icon
-        deleteButton.onclick = () => deleteWebsite(firm.id);
-
         details.appendChild(websiteInput);
         details.appendChild(updateButton);
-        details.appendChild(deleteButton);
-        container.appendChild(details);
 
-        container.appendChild(document.createElement('hr')); // Adds a horizontal line between firms
+        if (firm.website) {
+            const deleteButton = document.createElement('button');
+            deleteButton.innerHTML = '&#x274C;'; // Unicode for a delete icon
+            deleteButton.onclick = () => deleteWebsite(firm.id);
+            details.appendChild(deleteButton);
+        }
+
+        container.appendChild(details);
+        container.appendChild(document.createElement('hr')); // Separates each firm entry
     });
 }
 
@@ -70,7 +68,7 @@ async function updateWebsite(firmId, website) {
         }
 
         alert('Website updated successfully!');
-        searchFirma(); // Refresh the display
+        searchFirma(); // Refresh to see changes
     } catch (error) {
         console.error('Failed to update website:', error);
         document.getElementById('errorMessage').textContent = `Failed to update website: ${error.message}`;
@@ -91,7 +89,7 @@ async function deleteWebsite(firmId) {
         }
 
         alert('Website deleted successfully!');
-        searchFirma(); // Refresh the display
+        searchFirma(); // Refresh to see changes
     } catch (error) {
         console.error('Failed to delete website:', error);
         document.getElementById('errorMessage').textContent = `Failed to delete website: ${error.message}`;
