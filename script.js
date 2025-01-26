@@ -98,7 +98,9 @@ async function deleteWebsite(firmId) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ id: firmId })
+            body: JSON.stringify({ id: firmId }),
+            // Added credentials include might help in sending cookies or auth headers if needed
+            credentials: 'include'
         });
 
         if (!response.ok) {
