@@ -10,11 +10,13 @@
     <div class="container">
         <h1>Administrație Firme</h1>
 
+        <label for="searchId">ID-ul firmei:</label>
         <input type="text" id="searchId" placeholder="Introduceți ID-ul firmei">
         <button onclick="searchFirma()">Caută Firmă</button>
+        <div id="errorMessage"></div>
+        <div id="firmDetailsContainer"></div>
 
-        <div id="firmDetails"></div>
-
+        <label for="websiteUrl">URL Website:</label>
         <input type="text" id="websiteUrl" placeholder="Adaugă URL Website">
         <button onclick="addWebsite()">Adaugă Website</button>
     </div>
