@@ -91,26 +91,28 @@ async function updateWebsite(firmId, website) {
     }
 }
 
-async function deleteWebsite(firmId) {
+async function deleteWebsite(id) {
+    const url = `https://api.peviitor.ro/v6/firme/website/delete/`;
+
     try {
-        const response = await fetch(`https://api.peviitor.ro/v6/firme/website/delete/`, {
+        const response = await fetch(url, {
             method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({ id: firmId }),
-            // Added credentials include might help in sending cookies or auth headers if needed
+            body: JSON.stringify({ id: id }),
             credentials: 'include'
         });
 
         if (!response.ok) {
-            throw new Error(`Failed to delete website, server responded with: ${response.status}`);
+            throw new Error(`HTTP error! Status: ${response.status}`);
         }
 
-        alert('Website deleted successfully!');
-        searchFirma(); // Refresh to show that the website has been removed
+        const data = await response.json();
+        console.log('Delete successful:', data);
+        return data; // Assuming some form of response processing or handling is needed
     } catch (error) {
         console.error('Failed to delete website:', error);
-        document.getElementById('errorMessage').textContent = `Failed to delete website: ${error.message}`;
+        return null; // Handling errors this way allows the calling context to be aware of the failure
     }
 }
