@@ -1,46 +1,24 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Company Admin Panel</title>
-    <style>
-        .container {
-            width: 80%;
-            margin: 0 auto;
-            padding-top: 20px;
-        }
-        .firm-details {
-            background-color: #f2f2f2;
-            padding: 20px;
-            margin-bottom: 10px;
-        }
-        input[type="text"] {
-            width: 70%;
-            padding: 10px;
-            margin: 10px 0;
-        }
-        button {
-            padding: 10px 20px;
-            cursor: pointer;
-        }
-        hr {
-            border: none;
-            height: 1px;
-            background-color: #ccc;
-            margin-top: 20px;
-        }
-    </style>
-</head>
-<body>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
     <div class="container">
-        <h1>Company Admin Panel</h1>
-        <label for="searchId">Company ID:</label>
-        <input type="text" id="searchId" placeholder="Enter Company ID">
-        <button onclick="searchFirma()">Search Company</button>
-        <div id="errorMessage" style="color: red;"></div>
-        <div id="firmDetailsContainer"></div>
+      <h1>Company Admin Panel</h1>
+      <form class="search-form">
+        <div class="input-group">
+          <label for="searchId">Company ID:</label>
+          <input type="text" id="searchId" placeholder="Enter Company ID" />
+        </div>
+        <button type="submit">Search Company</button>
+      </form>
+      <div id="errorMessage" style="color: red"></div>
+      <div id="firmDetailsContainer"></div>
     </div>
     <script src="script.js"></script>
-</body>
+  </body>
 </html>
