@@ -116,19 +116,20 @@ async function deleteWebsite(id) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ id: id }),
-      credentials: "include",
+      // credentials: "include",
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(
+        `Failed to delete website, server responded with: ${response.status}`
+      );
     }
 
-    const data = await response.json();
-    console.log("Delete successful:", data);
-    return data; // Assuming some form of response processing or handling is needed
+    alert("Website deleted successfully!");
+    searchFirma(); // Refresh to show updated data
   } catch (error) {
     console.error("Failed to delete website:", error);
-    return null; // Handling errors this way allows the calling context to be aware of the failure
+    alert(`Failed to delete website: ${error.message}`);
   }
 }
 
