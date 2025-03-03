@@ -4,6 +4,7 @@
   margin: 0;
   padding: 0;
 }
+
 body,
 html {
   font-family: Arial, sans-serif;
@@ -37,6 +38,7 @@ html {
         display: block;
       }
     }
+
     button {
       padding: 12px 20px;
       margin: 0 auto;
@@ -71,14 +73,20 @@ html {
     padding: 10px;
     margin: 10px 0;
   }
+
   button {
     padding: 10px 20px;
     cursor: pointer;
   }
+
   hr {
     border: none;
     height: 1px;
     background-color: #ccc;
     margin-top: 20px;
   }
+}
+
+#errorMessage {
+  color: rgb(229, 9, 108);
 }
