@@ -16,8 +16,9 @@ html {
   margin: auto;
   padding: 20px;
   background: white;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 0 10px rgba(87, 13, 13, 0.1);
   margin-top: 50px;
+  border-radius: 25px;
 
   .search-form {
     width: 100%;
@@ -26,6 +27,7 @@ html {
     align-items: flex-end;
     flex-wrap: wrap;
     gap: 1rem;
+    border-radius: 25px;
 
     .input-group {
       min-width: 220px;
@@ -36,6 +38,7 @@ html {
         padding: 10px;
         margin-top: 0.5rem;
         display: block;
+        border-radius: 25px;
       }
     }
 
@@ -47,6 +50,7 @@ html {
       color: white;
       border: none;
       display: inline-block;
+      border-radius: 25px;
     }
   }
 
@@ -60,23 +64,29 @@ html {
     background: #e9ecef;
     border-radius: 5px;
     display: none;
+    border-radius: 25px;
   }
 }
 
 .firm-details {
-  background-color: #f2f2f2;
+  background-color: rgb(209, 208, 228);
   padding: 20px;
   margin-bottom: 10px;
+  border-radius: 25px;
+  color: rgb(58, 64, 87);
+  text-shadow: #0056b3;
 
   input[type="text"] {
     width: 70%;
     padding: 10px;
     margin: 10px 0;
+    border-radius: 25px;
   }
 
   button {
     padding: 10px 20px;
     cursor: pointer;
+    border-radius: 25px;
   }
 
   hr {
