@@ -25,7 +25,7 @@ async function searchFirma() {
       return;
     }
 
-    displayFirmDetails(data);
+    displayFirmDetails(data.docs);
   } catch (error) {
     console.error("Search failed:", error);
     document.getElementById(
