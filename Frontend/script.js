@@ -136,23 +136,40 @@ async function deleteField(firmId, field, value) {
     return;
   }
 
-  const endpointMap = {
-    website: "website",
-    email: "email",
-    brands: "brand",
-    scraper: "scraper",
-  };
-  const endpoint = endpointMap[field];
-
   try {
-    const response = await fetch(
-      `https://api.peviitor.ro/v6/firme/${endpoint}/delete/`,
-      {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: firmId, [field]: value }),
-      }
-    );
+    let response;
+
+    if (field === "website") {
+      // DELETE with JSON for website
+      response = await fetch(
+        `https://api.peviitor.ro/v6/firme/website/delete/`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: firmId, [field]: value }),
+        }
+      );
+    } else {
+      // POST with form-data for scraper, brands, email
+      const formData = new URLSearchParams();
+      formData.append("id", firmId);
+      formData.append(field, value);
+
+      const endpointMap = {
+        scraper: "scraper",
+        brands: "brand",
+        email: "email",
+      };
+      const endpoint = endpointMap[field];
+
+      response = await fetch(
+        `https://api.peviitor.ro/v6/firme/${endpoint}/delete/`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+    }
 
     if (!response.ok) {
       throw new Error(`Failed to delete ${field}, status: ${response.status}`);
