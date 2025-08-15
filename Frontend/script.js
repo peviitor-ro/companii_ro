@@ -99,6 +99,7 @@ async function updateField(firmId, field, value) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: firmId, [field]: value }),
+        credentials: "include",
       }
     );
 
@@ -137,6 +138,7 @@ async function deleteField(firmId, field, value) {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: firmId, [field]: value }),
+        credentials: "include",
       }
     );
 
