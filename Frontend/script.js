@@ -96,7 +96,7 @@ async function updateField(firmId, field, value) {
     const response = await fetch(
       `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
       {
-        method: "POST",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: firmId, [field]: value }),
       }
