@@ -84,23 +84,37 @@ async function updateField(firmId, field, value) {
     return;
   }
 
-  const endpointMap = {
-    website: "website",
-    email: "email",
-    brands: "brands",
-    scraper: "scraper",
-  };
-  const endpoint = endpointMap[field];
-
   try {
-    const response = await fetch(
-      `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
-      {
-        method: "POST",
+    let response;
+
+    if (field === "website") {
+      //PUT with JSON for website
+      response = await fetch(`https://api.peviitor.ro/v6/firme/website/add/`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: firmId, [field]: value }),
-      }
-    );
+      });
+    } else {
+      //POST with form-data for scraper, brands, email
+      const formData = new URLSearchParams();
+      formData.append("id", firmId);
+      formData.append(field, value);
+
+      const endpointMap = {
+        scraper: "scraper",
+        brands: "brand",
+        email: "email",
+      };
+      const endpoint = endpointMap[field];
+
+      response = await fetch(
+        `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+    }
 
     if (!response.ok) {
       throw new Error(`Failed to update ${field}, status: ${response.status}`);
