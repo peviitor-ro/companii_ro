@@ -1,102 +1,140 @@
-/* styles.css */
 * {
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
-body,
-html {
+body {
   font-family: Arial, sans-serif;
-  background: #f4f4f4;
+  margin: 0;
+  padding: 1rem;
+  background: #f8f9fa;
 }
 
 .container {
-  width: 80%;
+  max-width: 900px;
   margin: auto;
-  padding: 20px;
+}
+
+h1 {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.search-form {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.search-form input,
+.search-form button {
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.search-form button {
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.flash {
+  padding: 0.75rem;
+  border-radius: 8px;
+  margin: 0.5rem 0;
+  font-weight: bold;
+  text-align: center;
+}
+
+.flash.success {
+  background: #d4f7d0;
+  color: #1d5c1a;
+}
+
+.flash.error {
+  background: #f8d0d0;
+  color: #8a1a1a;
+}
+
+.firm-card {
   background: white;
-  box-shadow: 0 0 10px rgba(87, 13, 13, 0.1);
-  margin-top: 50px;
-  border-radius: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
 
-  .search-form {
-    width: 100%;
-    margin: 0.75rem 0;
-    display: flex;
-    align-items: flex-end;
-    flex-wrap: wrap;
-    gap: 1rem;
-    border-radius: 25px;
+.card-content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
 
-    .input-group {
-      min-width: 220px;
-      width: calc(100% - 160px);
+.card-left,
+.card-right {
+  flex: 1;
+}
 
-      input[type="text"] {
-        width: 100%;
-        padding: 10px;
-        margin-top: 0.5rem;
-        display: block;
-        border-radius: 25px;
-      }
-    }
+.card-right {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
 
-    button {
-      padding: 12px 20px;
-      margin: 0 auto;
-      cursor: pointer;
-      background: #007bff;
-      color: white;
-      border: none;
-      display: inline-block;
-      border-radius: 25px;
-    }
-  }
+.info-field {
+  padding: 0.5rem;
+  border-radius: 6px;
+  background: #f4f4f4;
+  border: 1px solid #ddd;
+}
 
-  button:hover {
-    background: #0056b3;
-  }
-
-  #firmDetails {
-    margin-top: 20px;
-    padding: 10px;
-    background: #e9ecef;
-    border-radius: 5px;
-    display: none;
-    border-radius: 25px;
+@media (min-width: 768px) {
+  .card-content {
+    flex-direction: row;
+    gap: 2rem;
   }
 }
 
-.firm-details {
-  background-color: rgb(209, 208, 228);
-  padding: 20px;
-  margin-bottom: 10px;
-  border-radius: 25px;
-  color: rgb(58, 64, 87);
-  text-shadow: #0056b3;
-
-  input[type="text"] {
-    width: 70%;
-    padding: 10px;
-    margin: 10px 0;
-    border-radius: 25px;
-  }
-
-  button {
-    padding: 10px 20px;
-    cursor: pointer;
-    border-radius: 25px;
-  }
-
-  hr {
-    border: none;
-    height: 1px;
-    background-color: #ccc;
-    margin-top: 20px;
-  }
+.input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
 }
 
-#errorMessage {
-  color: rgb(229, 9, 108);
+.input-group label {
+  margin-bottom: 0.25rem;
+  font-weight: bold;
+}
+
+.input-group input {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.button-group {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.button-group button {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.button-group button:first-child {
+  background: #28a745;
+  color: white;
+}
+
+.button-group button:last-child {
+  background: #dc3545;
+  color: white;
 }
