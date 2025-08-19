@@ -1,7 +1,14 @@
 async function searchFirma() {
   const id = document.getElementById("searchId").value.trim();
+  const flashArea = document.getElementById("errorMessage");
+  flashArea.innerHTML = "";
+
   if (!id) {
-    alert("Please enter an ID to search.");
+    showFlash(
+      flashArea,
+      "Please enter company Name or CUI to perform search.",
+      "error"
+    );
     return;
   }
 
@@ -16,17 +23,14 @@ async function searchFirma() {
 
     const data = await response.json();
     if (!data.docs || data.docs.length === 0) {
-      document.getElementById("firmDetailsContainer").textContent =
-        "No firm found with given ID.";
+      showFlash(flashArea, "No firm found with given ID.", "error");
       return;
     }
 
     displayFirmDetails(data.docs);
   } catch (error) {
     console.error("Search failed:", error);
-    document.getElementById(
-      "errorMessage"
-    ).textContent = `Search failed: ${error.message}`;
+    showFlash(flashArea, `Search failed: ${error.message}`, "error");
   }
 }
 
@@ -35,52 +39,102 @@ function displayFirmDetails(firms) {
   container.innerHTML = "";
 
   firms.forEach((firm) => {
-    const detailsDiv = document.createElement("div");
-    detailsDiv.className = "firm-details";
+    const card = document.createElement("div");
+    card.className = "firm-card";
+
+    const cardFlash = document.createElement("div");
+    cardFlash.className = "card-flash";
+    card.appendChild(cardFlash);
+
+    const cardContent = document.createElement("div");
+    cardContent.className = "card-content";
+
+    const left = document.createElement("div");
+    left.className = "card-left";
+
+    const fields = ["website", "email", "brands", "scraper"];
+    fields.forEach((field) => {
+      const group = document.createElement("div");
+      group.className = "input-group";
+
+      const label = document.createElement("label");
+      label.textContent = field.charAt(0).toUpperCase() + field.slice(1);
+
+      const input = document.createElement("input");
+      input.type = "text";
+
+      if (Array.isArray(firm[field])) {
+        input.value =
+          firm[field].length > 0 ? firm[field][firm[field].length - 1] : "";
+      } else {
+        input.value = firm[field] || "";
+      }
+
+      input.placeholder = `Enter ${field}`;
+
+      const btnGroup = document.createElement("div");
+      btnGroup.className = "button-group";
+
+      const addBtn = document.createElement("button");
+      addBtn.textContent = "Add";
+      addBtn.onclick = () =>
+        updateField(firm, field, input.value, cardFlash, card, input);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Delete";
+      deleteBtn.onclick = () =>
+        deleteField(firm, field, input.value, cardFlash, card, input);
+
+      btnGroup.appendChild(addBtn);
+      btnGroup.appendChild(deleteBtn);
+
+      group.appendChild(label);
+      group.appendChild(input);
+      group.appendChild(btnGroup);
+      left.appendChild(group);
+    });
+
+    const right = document.createElement("div");
+    right.className = "card-right";
 
     for (const key in firm) {
       if (firm.hasOwnProperty(key)) {
         const value = Array.isArray(firm[key])
           ? firm[key].join(", ")
           : firm[key];
-        const element = document.createElement("p");
-        element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${value}`;
-        detailsDiv.appendChild(element);
+
+        const element = document.createElement("div");
+        element.className = "info-field";
+        element.setAttribute("data-field", key.toLowerCase());
+        element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${
+          value || "-"
+        }`;
+        right.appendChild(element);
       }
     }
 
-    const fields = ["website", "email", "brands", "scraper"];
-    fields.forEach((field) => {
-      const input = document.createElement("input");
-      input.type = "text";
-      input.value = firm[field]
-        ? Array.isArray(firm[field])
-          ? firm[field][0]
-          : firm[field]
-        : "";
-      input.placeholder = `Add/Update ${field}`;
-
-      const updateBtn = document.createElement("button");
-      updateBtn.textContent = "Update";
-      updateBtn.onclick = () => updateField(firm.id, field, input.value);
-
-      const deleteBtn = document.createElement("button");
-      deleteBtn.innerHTML = "&#x274C;";
-      deleteBtn.onclick = () => deleteField(firm.id, field, input.value);
-
-      detailsDiv.appendChild(input);
-      detailsDiv.appendChild(updateBtn);
-      detailsDiv.appendChild(deleteBtn);
-    });
-
-    container.appendChild(detailsDiv);
-    container.appendChild(document.createElement("hr"));
+    cardContent.appendChild(left);
+    cardContent.appendChild(right);
+    card.appendChild(cardContent);
+    container.appendChild(card);
   });
 }
 
-async function updateField(firmId, field, value) {
+function showFlash(container, message, type = "success") {
+  container.innerHTML = "";
+  const msg = document.createElement("div");
+  msg.className = `flash ${type}`;
+  msg.textContent = message;
+  container.appendChild(msg);
+
+  setTimeout(() => {
+    msg.remove();
+  }, 3000);
+}
+
+async function updateField(firm, field, value, flashArea, card, inputEl) {
   if (!value) {
-    alert(`Please enter a ${field} value to update.`);
+    showFlash(flashArea, `Please enter a ${field} value.`, "error");
     return;
   }
 
@@ -88,16 +142,14 @@ async function updateField(firmId, field, value) {
     let response;
 
     if (field === "website") {
-      //PUT with JSON for website
       response = await fetch(`https://api.peviitor.ro/v6/firme/website/add/`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: firmId, [field]: value }),
+        body: JSON.stringify({ id: firm.id, [field]: value }),
       });
     } else {
-      //POST with form-data for scraper, brands, email
       const formData = new URLSearchParams();
-      formData.append("id", firmId);
+      formData.append("id", firm.id);
       formData.append(field, value);
 
       const endpointMap = {
@@ -109,30 +161,38 @@ async function updateField(firmId, field, value) {
 
       response = await fetch(
         `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
-        {
-          method: "POST",
-          body: formData,
-        }
+        { method: "POST", body: formData }
       );
     }
 
-    if (!response.ok) {
-      throw new Error(`Failed to update ${field}, status: ${response.status}`);
+    if (!response.ok) throw new Error(`Failed to add ${field}`);
+
+    if (Array.isArray(firm[field])) {
+      firm[field].push(value);
+    } else if (firm[field]) {
+      firm[field] = [firm[field], value];
+    } else {
+      firm[field] = [value];
+    }
+    inputEl.value = firm[field][firm[field].length - 1];
+
+    const fieldElement = card.querySelector(`[data-field="${field}"]`);
+    if (fieldElement) {
+      fieldElement.innerHTML = `<strong>${field.toUpperCase()}:</strong> ${firm[
+        field
+      ].join(", ")}`;
     }
 
-    alert(`${field} updated successfully!`);
-    searchFirma();
+    showFlash(flashArea, `${field} added successfully!`, "success");
   } catch (error) {
-    console.error(`Failed to update ${field}:`, error);
-    document.getElementById(
-      "errorMessage"
-    ).textContent = `Failed to update ${field}: ${error.message}`;
+    console.error(error);
+    showFlash(flashArea, `Failed to add ${field}: ${error.message}`, "error");
   }
 }
 
-async function deleteField(firmId, field, value) {
+async function deleteField(firm, field, value, flashArea, card, inputEl) {
   if (!value) {
-    alert(`No ${field} value to delete.`);
+    showFlash(flashArea, `No ${field} value to delete.`, "error");
     return;
   }
 
@@ -145,9 +205,7 @@ async function deleteField(firmId, field, value) {
     };
     const endpoint = endpointMap[field];
 
-    const payloadValue = Array.isArray(value) ? value : value;
-
-    const payload = { id: firmId, [field]: payloadValue };
+    const payload = { id: firm.id, [field]: value };
 
     const response = await fetch(
       `https://api.peviitor.ro/v6/firme/${endpoint}/delete/`,
@@ -158,15 +216,36 @@ async function deleteField(firmId, field, value) {
       }
     );
 
-    if (!response.ok) {
-      throw new Error(`Failed to delete ${field}, status: ${response.status}`);
+    if (!response.ok) throw new Error(`Failed to delete ${field}`);
+
+    if (Array.isArray(firm[field])) {
+      firm[field] = firm[field].filter((item) => item !== value);
+    } else {
+      firm[field] = null;
     }
 
-    alert(`${field} deleted successfully!`);
-    searchFirma();
+    if (Array.isArray(firm[field]) && firm[field].length > 0) {
+      inputEl.value = firm[field][firm[field].length - 1];
+    } else {
+      inputEl.value = "";
+    }
+
+    const fieldElement = card.querySelector(`[data-field="${field}"]`);
+    if (fieldElement) {
+      const displayVal = Array.isArray(firm[field])
+        ? firm[field].join(", ")
+        : firm[field] || "-";
+      fieldElement.innerHTML = `<strong>${field.toUpperCase()}:</strong> ${displayVal}`;
+    }
+
+    showFlash(flashArea, `${field} deleted successfully!`, "success");
   } catch (error) {
-    console.error(`Failed to delete ${field}:`, error);
-    alert(`Failed to delete ${field}: ${error.message}`);
+    console.error(error);
+    showFlash(
+      flashArea,
+      `Failed to delete ${field}: ${error.message}`,
+      "error"
+    );
   }
 }
 
