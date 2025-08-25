@@ -138,6 +138,19 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
     return;
   }
 
+  if (field === "email") {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(value)) {
+      showFlash(flashArea, `Invalid email format.`, "error");
+      return;
+    }
+  }
+
+  if (Array.isArray(firm[field]) && firm[field].includes(value)) {
+    showFlash(flashArea, `${field} "${value}" already exists.`, "error");
+    return;
+  }
+
   try {
     let response;
 
@@ -174,7 +187,8 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
     } else {
       firm[field] = [value];
     }
-    inputEl.value = firm[field][firm[field].length - 1];
+
+    inputEl.value = firm[field][firm[field].length - 1] || "";
 
     const fieldElement = card.querySelector(`[data-field="${field}"]`);
     if (fieldElement) {
@@ -224,11 +238,10 @@ async function deleteField(firm, field, value, flashArea, card, inputEl) {
       firm[field] = null;
     }
 
-    if (Array.isArray(firm[field]) && firm[field].length > 0) {
-      inputEl.value = firm[field][firm[field].length - 1];
-    } else {
-      inputEl.value = "";
-    }
+    inputEl.value =
+      Array.isArray(firm[field]) && firm[field].length > 0
+        ? firm[field][firm[field].length - 1]
+        : "";
 
     const fieldElement = card.querySelector(`[data-field="${field}"]`);
     if (fieldElement) {
