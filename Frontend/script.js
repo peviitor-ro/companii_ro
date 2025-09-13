@@ -153,30 +153,22 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
 
   try {
     let response;
+    const formData = new URLSearchParams();
+    formData.append("id", firm.id);
+    formData.append(field, value);
 
-    if (field === "website") {
-      response = await fetch(`https://api.peviitor.ro/v6/firme/website/add/`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: firm.id, [field]: value }),
-      });
-    } else {
-      const formData = new URLSearchParams();
-      formData.append("id", firm.id);
-      formData.append(field, value);
+    const endpointMap = {
+      website: "website",
+      scraper: "scraper",
+      brands: "brand",
+      email: "email",
+    };
+    const endpoint = endpointMap[field];
 
-      const endpointMap = {
-        scraper: "scraper",
-        brands: "brand",
-        email: "email",
-      };
-      const endpoint = endpointMap[field];
-
-      response = await fetch(
-        `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
-        { method: "POST", body: formData }
-      );
-    }
+    response = await fetch(
+      `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
+      { method: "POST", body: formData }
+    );
 
     if (!response.ok) throw new Error(`Failed to add ${field}`);
 
