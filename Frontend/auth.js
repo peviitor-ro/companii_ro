@@ -3,10 +3,10 @@
 
 class AuthManager {
   constructor() {
-    this.baseURL = "https://api.peviitor.ro/v6/auth"; // Validator auth endpoint
+    this.baseURL = "https://api.laurentiumarian.ro"; // Validator auth endpoint
     this.storageKey = "companii_ro_auth";
     this.currentUser = this.getStoredAuth();
-    this.testMode = window.location.hostname === "localhost"; // Enable test mode for localhost
+    // this.testMode = window.location.hostname.startsWith("localhost") || window.location.hostname.startsWith("127.0.0.1");
   }
 
   // Get authentication state from localStorage
@@ -42,12 +42,15 @@ class AuthManager {
       // For demo purposes, create a test login link
       const testToken = "test_token_" + Date.now();
       console.log("Test mode: Login link would be sent to", email);
-      console.log("Test login URL:", `${window.location.origin}${window.location.pathname}?token=${testToken}`);
+      console.log(
+        "Test login URL:",
+        `${window.location.origin}${window.location.pathname}?token=${testToken}`
+      );
       return { success: true, message: "Test login link generated" };
     }
 
     try {
-      const response = await fetch(`${this.baseURL}/login`, {
+      const response = await fetch(`${this.baseURL}/get_token`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,12 +88,12 @@ class AuthManager {
 
       localStorage.setItem(this.storageKey, JSON.stringify(authState));
       this.currentUser = authState;
-      
+
       return authState;
     }
 
     try {
-      const response = await fetch(`${this.baseURL}/verify/${token}`, {
+      const response = await fetch(`${this.baseURL}/authorized/${token}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -102,20 +105,22 @@ class AuthManager {
       }
 
       const authData = await response.json();
-      
+
       // Store authentication data
       const authState = {
         accessToken: authData.access,
         refreshToken: authData.refresh,
-        email: authData.email,
         isStaff: authData.is_staff || false,
+        email: document.getElementById("loginEmail")
+          ? document.getElementById("loginEmail").value
+          : "",
         isSuperuser: authData.is_superuser || false,
         expiresAt: Date.now() + (authData.expires_in || 3600) * 1000, // Default 1 hour
       };
 
       localStorage.setItem(this.storageKey, JSON.stringify(authState));
       this.currentUser = authState;
-      
+
       return authState;
     } catch (error) {
       console.error("Token verification error:", error);
@@ -140,7 +145,7 @@ class AuthManager {
 
     localStorage.setItem(this.storageKey, JSON.stringify(authState));
     this.currentUser = authState;
-    
+
     return authState;
   }
 
@@ -180,8 +185,10 @@ class AuthManager {
 
   // Check if user has admin permissions
   isAdmin() {
-    return this.isAuthenticated() && 
-           (this.currentUser.isStaff || this.currentUser.isSuperuser);
+    return (
+      this.isAuthenticated() &&
+      (this.currentUser.isStaff || this.currentUser.isSuperuser)
+    );
   }
 }
 
@@ -193,14 +200,16 @@ function showAuthForm() {
   const authContainer = document.getElementById("authContainer");
   if (!authContainer) return;
 
-  const testModeHtml = window.authManager.testMode ? `
+  const testModeHtml = window.authManager.testMode
+    ? `
     <div style="margin-bottom: 1rem; padding: 0.5rem; background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 6px;">
       <strong>Test Mode:</strong> 
       <button onclick="window.authManager.testLogin(); updateAuthUI();" style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
         Test Login
       </button>
     </div>
-  ` : '';
+  `
+    : "";
 
   authContainer.innerHTML = `
     <div class="auth-form">
@@ -212,7 +221,7 @@ function showAuthForm() {
           <label for="loginEmail">Email:</label>
           <input type="email" id="loginEmail" placeholder="Enter your email" required />
         </div>
-        <button type="submit">Send Login Link</button>
+        <button type="submit">Login</button>
       </form>
       <div id="loginMessage"></div>
     </div>
@@ -240,20 +249,22 @@ async function handleLogin(event) {
   const messageDiv = document.getElementById("loginMessage");
 
   if (!email) {
-    messageDiv.innerHTML = '<div class="flash error">Please enter your email</div>';
+    messageDiv.innerHTML =
+      '<div class="flash error">Please enter your email</div>';
     return;
   }
 
   try {
     messageDiv.innerHTML = '<div class="flash">Sending login link...</div>';
     const result = await window.authManager.requestLogin(email);
-    
+    const haveAccess = await window.authManager.verifyToken(result.access);
+
     if (window.authManager.testMode) {
       messageDiv.innerHTML = `
         <div class="flash success">
-          <strong>Test Mode:</strong> Login link sent to ${email}.<br>
-          <small>In production, check your email for the login link.</small><br>
-          <a href="${window.location.origin}${window.location.pathname}?token=test_token_${Date.now()}" 
+          <a href="${window.location.origin}${
+        window.location.pathname
+      }?token=test_token_${Date.now()}" 
              style="color: #007bff; text-decoration: underline;">
             Click here for test login
           </a>
@@ -262,9 +273,19 @@ async function handleLogin(event) {
     } else {
       messageDiv.innerHTML = `
         <div class="flash success">
-          Login link sent to ${email}. Please check your email and click the link to login.
+          Login successful!
         </div>
       `;
+
+      if (haveAccess) {
+        updateAuthUI();
+      } else {
+        messageDiv.innerHTML += `
+          <div class="flash error">
+            You do not have permission to access this application.
+          </div>
+        `;
+      }
     }
   } catch (error) {
     messageDiv.innerHTML = `<div class="flash error">Failed to send login link: ${error.message}</div>`;
@@ -292,21 +313,31 @@ function updateAuthUI() {
 
 // Check for auth token in URL (from magic link)
 function checkAuthToken() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get("token");
-  
+  const token = window.authManager.currentUser?.accessToken || null;
+
   if (token) {
     // Remove token from URL
     window.history.replaceState({}, document.title, window.location.pathname);
-    
+
     // Verify token
-    window.authManager.verifyToken(token)
+    window.authManager
+      .verifyToken(token)
       .then(() => {
         updateAuthUI();
-        showFlash(document.getElementById("authContainer"), "Successfully logged in!", "success");
+        showFlash(
+          document.getElementById("authContainer"),
+          "Successfully logged in!",
+          "success"
+        );
       })
       .catch((error) => {
-        showFlash(document.getElementById("authContainer"), `Login failed: ${error.message}`, "error");
+        showFlash(
+          document.getElementById("authContainer"),
+          `Login failed: ${error.message}`,
+          "error"
+        );
+        window.authManager.logout();
+        updateAuthUI();
       });
   }
 }
