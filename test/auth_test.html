@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authentication Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin-bottom: 10px; padding: 10px; border-radius: 5px; }
+        .pass { background-color: #d4edda; color: #155724; }
+        .fail { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>Authentication System Tests</h1>
+    <div id="testResults"></div>
+    
+    <script src="../Frontend/auth.js"></script>
+    <script>
+        // Simple test suite for authentication
+        const tests = [];
+        
+        function test(name, fn) {
+            tests.push({ name, fn });
+        }
+        
+        function runTests() {
+            const resultsDiv = document.getElementById('testResults');
+            let passed = 0;
+            let failed = 0;
+            
+            tests.forEach(testCase => {
+                try {
+                    testCase.fn();
+                    resultsDiv.innerHTML += `<div class="test pass">✓ ${testCase.name}</div>`;
+                    passed++;
+                } catch (error) {
+                    resultsDiv.innerHTML += `<div class="test fail">✗ ${testCase.name}: ${error.message}</div>`;
+                    failed++;
+                }
+            });
+            
+            resultsDiv.innerHTML += `<div style="margin-top: 20px; font-weight: bold;">
+                Results: ${passed} passed, ${failed} failed
+            </div>`;
+        }
+        
+        // Test cases
+        test('AuthManager should be initialized', () => {
+            if (!window.authManager) throw new Error('AuthManager not found');
+            if (typeof window.authManager.isAuthenticated !== 'function') {
+                throw new Error('isAuthenticated method not found');
+            }
+        });
+        
+        test('Email validation should work', () => {
+            if (!window.authManager.isValidEmail('test@example.com')) {
+                throw new Error('Valid email should pass validation');
+            }
+            if (window.authManager.isValidEmail('invalid-email')) {
+                throw new Error('Invalid email should fail validation');
+            }
+        });
+        
+        test('Authentication state should be initially false', () => {
+            // Clear any existing auth first
+            window.authManager.logout();
+            if (window.authManager.isAuthenticated()) {
+                throw new Error('Should not be authenticated initially');
+            }
+        });
+        
+        test('Test login should work in test mode', () => {
+            if (!window.authManager.testMode) {
+                throw new Error('Test mode should be enabled on localhost');
+            }
+            
+            const result = window.authManager.testLogin('test@example.com');
+            if (!result || !result.accessToken) {
+                throw new Error('Test login should return auth data');
+            }
+            
+            if (!window.authManager.isAuthenticated()) {
+                throw new Error('Should be authenticated after test login');
+            }
+        });
+        
+        test('Current user should be available after login', () => {
+            const user = window.authManager.getCurrentUser();
+            if (!user || !user.email) {
+                throw new Error('Current user should be available');
+            }
+            if (user.email !== 'test@example.com') {
+                throw new Error('Email should match test login');
+            }
+        });
+        
+        test('Logout should clear authentication', () => {
+            window.authManager.logout();
+            if (window.authManager.isAuthenticated()) {
+                throw new Error('Should not be authenticated after logout');
+            }
+            if (window.authManager.getCurrentUser()) {
+                throw new Error('Current user should be null after logout');
+            }
+        });
+        
+        // Run tests when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(runTests, 100); // Small delay to ensure auth manager is ready
+        });
+    </script>
+</body>
+</html>
