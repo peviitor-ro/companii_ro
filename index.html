@@ -9,16 +9,24 @@
   <body>
     <div class="container">
       <h1>Company Admin Panel</h1>
-      <form class="search-form">
-        <div class="input-group">
-          <label for="searchId">Company ID:</label>
-          <input type="text" id="searchId" placeholder="Enter Company ID" />
-        </div>
-        <button type="submit">Search Company</button>
-      </form>
-      <div id="errorMessage"></div>
-      <div id="firmDetailsContainer"></div>
+      
+      <!-- Authentication Section -->
+      <div id="authContainer" class="auth-container"></div>
+      
+      <!-- Main Application (hidden until authenticated) -->
+      <div id="mainApp" class="main-app">
+        <form class="search-form">
+          <div class="input-group">
+            <label for="searchId">Company ID:</label>
+            <input type="text" id="searchId" placeholder="Enter Company ID" />
+          </div>
+          <button type="submit">Search Company</button>
+        </form>
+        <div id="errorMessage"></div>
+        <div id="firmDetailsContainer"></div>
+      </div>
     </div>
+    <script src="./Frontend/auth.js"></script>
     <script src="./Frontend/script.js"></script>
   </body>
 </html>
