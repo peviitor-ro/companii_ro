@@ -85,8 +85,18 @@ function displayFirmDetails(firms) {
       deleteBtn.onclick = () =>
         deleteField(firm, field, input.value, cardFlash, card, input);
 
-      btnGroup.appendChild(addBtn);
-      btnGroup.appendChild(deleteBtn);
+      // Only show admin buttons if authenticated
+      if (window.authManager && window.authManager.isAuthenticated()) {
+        btnGroup.appendChild(addBtn);
+        btnGroup.appendChild(deleteBtn);
+      } else {
+        // Show disabled message
+        const disabledMsg = document.createElement("div");
+        disabledMsg.className = "admin-disabled";
+        disabledMsg.textContent = "Login required for editing";
+        btnGroup.appendChild(disabledMsg);
+        input.disabled = true;
+      }
 
       group.appendChild(label);
       group.appendChild(input);
@@ -133,6 +143,12 @@ function showFlash(container, message, type = "success") {
 }
 
 async function updateField(firm, field, value, flashArea, card, inputEl) {
+  // Check authentication before allowing updates
+  if (!window.authManager || !window.authManager.isAuthenticated()) {
+    showFlash(flashArea, "Authentication required to modify data", "error");
+    return;
+  }
+
   if (!value) {
     showFlash(flashArea, `Please enter a ${field} value.`, "error");
     return;
@@ -165,10 +181,19 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
     };
     const endpoint = endpointMap[field];
 
-    response = await fetch(
-      `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
-      { method: "POST", body: formData }
-    );
+    // Use authenticated fetch for API requests
+    if (window.authManager.isAuthenticated()) {
+      response = await window.authManager.authenticatedFetch(
+        `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
+        { method: "POST", body: formData }
+      );
+    } else {
+      // Fallback to regular fetch if not authenticated (should not reach here)
+      response = await fetch(
+        `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
+        { method: "POST", body: formData }
+      );
+    }
 
     if (!response.ok) throw new Error(`Failed to add ${field}`);
 
@@ -197,6 +222,12 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
 }
 
 async function deleteField(firm, field, value, flashArea, card, inputEl) {
+  // Check authentication before allowing deletions
+  if (!window.authManager || !window.authManager.isAuthenticated()) {
+    showFlash(flashArea, "Authentication required to modify data", "error");
+    return;
+  }
+
   if (!value) {
     showFlash(flashArea, `No ${field} value to delete.`, "error");
     return;
@@ -213,14 +244,28 @@ async function deleteField(firm, field, value, flashArea, card, inputEl) {
 
     const payload = { id: firm.id, [field]: value };
 
-    const response = await fetch(
-      `https://api.peviitor.ro/v6/firme/${endpoint}/delete/`,
-      {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      }
-    );
+    // Use authenticated fetch for API requests
+    let response;
+    if (window.authManager.isAuthenticated()) {
+      response = await window.authManager.authenticatedFetch(
+        `https://api.peviitor.ro/v6/firme/${endpoint}/delete/`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+    } else {
+      // Fallback to regular fetch if not authenticated (should not reach here)
+      response = await fetch(
+        `https://api.peviitor.ro/v6/firme/${endpoint}/delete/`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+    }
 
     if (!response.ok) throw new Error(`Failed to delete ${field}`);
 

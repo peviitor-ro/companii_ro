@@ -21,6 +21,76 @@ h1 {
   margin-bottom: 1rem;
 }
 
+/* Authentication Styles */
+.auth-container {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+}
+
+.auth-form {
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.auth-form h2 {
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.auth-form p {
+  margin-bottom: 1rem;
+  color: #666;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.auth-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.auth-status p {
+  margin: 0;
+  color: #28a745;
+}
+
+#logoutBtn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#logoutBtn:hover {
+  background: #c82333;
+}
+
+/* Hide main app until authenticated */
+.main-app {
+  display: none;
+}
+
+body.authenticated .main-app {
+  display: block;
+}
+
+body.authenticated .auth-form {
+  display: none;
+}
+
 .search-form {
   display: flex;
   flex-direction: column;
@@ -137,4 +207,14 @@ h1 {
 .button-group button:last-child {
   background: #dc3545;
   color: white;
+}
+
+.admin-disabled {
+  padding: 0.5rem;
+  background: #f8f9fa;
+  color: #6c757d;
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.875rem;
+  border: 1px solid #dee2e6;
 }
