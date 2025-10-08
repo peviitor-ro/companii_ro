@@ -6,7 +6,7 @@ class AuthManager {
     this.baseURL = "https://api.laurentiumarian.ro"; // Validator auth endpoint
     this.storageKey = "companii_ro_auth";
     this.currentUser = this.getStoredAuth();
-    // this.testMode = window.location.hostname.startsWith("localhost") || window.location.hostname.startsWith("127.0.0.1");
+    this.testMode = window.location.hostname.startsWith("localhost") || window.location.hostname.startsWith("127.0.0.1");
   }
 
   // Get authentication state from localStorage
@@ -336,7 +336,6 @@ function checkAuthToken() {
           `Login failed: ${error.message}`,
           "error"
         );
-        window.authManager.logout();
         updateAuthUI();
       });
   }
