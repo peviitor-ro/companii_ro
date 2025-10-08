@@ -6,7 +6,7 @@ class AuthManager {
     this.baseURL = "https://api.laurentiumarian.ro"; // Validator auth endpoint
     this.storageKey = "companii_ro_auth";
     this.currentUser = this.getStoredAuth();
-    this.testMode = window.location.hostname.startsWith("localhost") || window.location.hostname.startsWith("127.0.0.1");
+    // this.testMode = window.location.hostname.startsWith("localhost") || window.location.hostname.startsWith("127.0.0.1");
   }
 
   // Get authentication state from localStorage
@@ -62,7 +62,12 @@ class AuthManager {
         throw new Error(`Login request failed: ${response.status}`);
       }
 
-      return await response.json();
+      // add email to response for later use
+
+      const data = await response.json();
+      data.email = email;
+
+      return data;
     } catch (error) {
       console.error("Login request error:", error);
       throw error;
@@ -105,15 +110,14 @@ class AuthManager {
       }
 
       const authData = await response.json();
+      const email = localStorage.getItem("email");
 
       // Store authentication data
       const authState = {
         accessToken: authData.access,
         refreshToken: authData.refresh,
         isStaff: authData.is_staff || false,
-        email: document.getElementById("loginEmail")
-          ? document.getElementById("loginEmail").value
-          : "",
+        email: email || "<unknown>",
         isSuperuser: authData.is_superuser || false,
         expiresAt: Date.now() + (authData.expires_in || 3600) * 1000, // Default 1 hour
       };
@@ -124,6 +128,9 @@ class AuthManager {
       return authState;
     } catch (error) {
       console.error("Token verification error:", error);
+      // Clear any existing user data
+      localStorage.removeItem(this.storageKey);
+      this.currentUser = null;
       throw error;
     }
   }
@@ -246,6 +253,7 @@ function showAuthenticatedState() {
 async function handleLogin(event) {
   event.preventDefault();
   const email = document.getElementById("loginEmail").value.trim();
+  localStorage.setItem("email", email); // Store email for later use
   const messageDiv = document.getElementById("loginMessage");
 
   if (!email) {
@@ -349,3 +357,4 @@ document.addEventListener("DOMContentLoaded", () => {
   checkAuthToken();
   updateAuthUI();
 });
+
