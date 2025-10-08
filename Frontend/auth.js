@@ -323,12 +323,15 @@ function checkAuthToken() {
     window.authManager
       .verifyToken(token)
       .then(() => {
-        updateAuthUI();
+        
         showFlash(
           document.getElementById("authContainer"),
           "Successfully logged in!",
           "success"
         );
+
+        updateAuthUI();
+
       })
       .catch((error) => {
         showFlash(
