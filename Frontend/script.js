@@ -1,3 +1,88 @@
+function formatPhoneNumber(value) {
+  let cleaned = value.startsWith("+")
+    ? "+" + value.slice(1).replace(/\D/g, "")
+    : value.replace(/\D/g, "");
+
+  if (cleaned.length > 3) {
+    if (cleaned.startsWith("+40")) {
+      if (cleaned.length <= 6)
+        return cleaned.slice(0, 3) + " " + cleaned.slice(3);
+      if (cleaned.length <= 9)
+        return (
+          cleaned.slice(0, 3) +
+          " " +
+          cleaned.slice(3, 6) +
+          " " +
+          cleaned.slice(6)
+        );
+      return (
+        cleaned.slice(0, 3) +
+        " " +
+        cleaned.slice(3, 6) +
+        " " +
+        cleaned.slice(6, 9) +
+        " " +
+        cleaned.slice(9, 12)
+      );
+    } else if (cleaned.startsWith("+")) {
+      return cleaned
+        .replace(
+          /(\+\d{1,3})(\d{1,3})?(\d{1,3})?(\d+)?/,
+          (match, p1, p2, p3, p4) => {
+            let result = p1;
+            if (p2) result += " " + p2;
+            if (p3) result += " " + p3;
+            if (p4) result += " " + p4;
+            return result;
+          }
+        )
+        .trim();
+    }
+  }
+  return cleaned;
+}
+
+function createLink(key, value) {
+  if (!value) return "-";
+
+  let cleanValue = value;
+  if (key === "phone") {
+    cleanValue = value.replace(/[\s\(\)-]/g, "");
+  }
+
+  let href = "";
+  let target = "";
+  let displayValue = value;
+
+  switch (key) {
+    case "website":
+      href = cleanValue.startsWith("http")
+        ? cleanValue
+        : `https://${cleanValue}`;
+      target = "_blank";
+      break;
+    case "scraper":
+      href = cleanValue.startsWith("http")
+        ? cleanValue
+        : `https://${cleanValue}`;
+      target = "_blank";
+      break;
+    case "email":
+      href = `mailto:${cleanValue}`;
+      break;
+    case "phone":
+      href = `tel:${cleanValue}`;
+      displayValue = formatPhoneNumber(value);
+      break;
+    default:
+      return value;
+  }
+
+  return `<a href="${href}"${
+    target ? ` target="${target}"` : ""
+  }>${displayValue}</a>`;
+}
+
 async function searchFirma() {
   const id = document.getElementById("searchId").value.trim();
   const flashArea = document.getElementById("errorMessage");
@@ -52,7 +137,7 @@ function displayFirmDetails(firms) {
     const left = document.createElement("div");
     left.className = "card-left";
 
-    const fields = ["website", "email", "brands", "scraper"];
+    const fields = ["website", "email", "phone", "brands", "scraper"];
     fields.forEach((field) => {
       const group = document.createElement("div");
       group.className = "input-group";
@@ -63,14 +148,32 @@ function displayFirmDetails(firms) {
       const input = document.createElement("input");
       input.type = "text";
 
+      let initialValue = "";
       if (Array.isArray(firm[field])) {
-        input.value =
+        initialValue =
           firm[field].length > 0 ? firm[field][firm[field].length - 1] : "";
       } else {
-        input.value = firm[field] || "";
+        initialValue = firm[field] || "";
       }
 
-      input.placeholder = `Enter ${field}`;
+      if (field === "phone") {
+        input.value = formatPhoneNumber(initialValue);
+
+        input.addEventListener("input", (e) => {
+          const cursorPosition = input.selectionStart;
+          const oldValue = input.value;
+          const newValue = formatPhoneNumber(e.target.value);
+          input.value = newValue;
+
+          const diff = newValue.length - oldValue.length;
+          input.selectionEnd = cursorPosition + diff;
+        });
+
+        input.placeholder = "+40 7xx xxx xxx sau număr național";
+      } else {
+        input.value = initialValue;
+        input.placeholder = `Enter ${field}`;
+      }
 
       const btnGroup = document.createElement("div");
       btnGroup.className = "button-group";
@@ -109,15 +212,36 @@ function displayFirmDetails(firms) {
 
     for (const key in firm) {
       if (firm.hasOwnProperty(key)) {
-        const value = Array.isArray(firm[key])
-          ? firm[key].join(", ")
-          : firm[key];
+        let value = firm[key];
+        const keyLower = key.toLowerCase();
+
+        let displayValue;
+
+        if (Array.isArray(value)) {
+          const items = value.map((item) => {
+            if (["website", "scraper", "email", "phone"].includes(keyLower)) {
+              return createLink(keyLower, item);
+            }
+            if (keyLower === "phone") {
+              return formatPhoneNumber(item);
+            }
+            return item;
+          });
+          displayValue = items.join(", ");
+        } else {
+          if (["website", "scraper", "email", "phone"].includes(keyLower)) {
+            displayValue = createLink(keyLower, value);
+          } else {
+            displayValue = value || "-";
+          }
+        }
 
         const element = document.createElement("div");
         element.className = "info-field";
-        element.setAttribute("data-field", key.toLowerCase());
+        element.setAttribute("data-field", keyLower);
+
         element.innerHTML = `<strong>${key.toUpperCase()}:</strong> ${
-          value || "-"
+          displayValue || "-"
         }`;
         right.appendChild(element);
       }
@@ -143,11 +267,12 @@ function showFlash(container, message, type = "success") {
 }
 
 async function updateField(firm, field, value, flashArea, card, inputEl) {
-  // Check authentication before allowing updates
   if (!window.authManager || !window.authManager.isAuthenticated()) {
     showFlash(flashArea, "Authentication required to modify data", "error");
     return;
   }
+
+  let cleanValue = value;
 
   if (!value) {
     showFlash(flashArea, `Please enter a ${field} value.`, "error");
@@ -162,8 +287,22 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
     }
   }
 
-  if (Array.isArray(firm[field]) && firm[field].includes(value)) {
-    showFlash(flashArea, `${field} "${value}" already exists.`, "error");
+  if (field === "phone") {
+    cleanValue = value.replace(/[\s\(\)-]/g, "");
+    const phoneCleanRegex = /^\+?\d+$/;
+
+    if (!phoneCleanRegex.test(cleanValue)) {
+      showFlash(
+        flashArea,
+        `Phone number should contain only digits and may start with '+'.`,
+        "error"
+      );
+      return;
+    }
+  }
+
+  if (Array.isArray(firm[field]) && firm[field].includes(cleanValue)) {
+    showFlash(flashArea, `${field} "${cleanValue}" already exists.`, "error");
     return;
   }
 
@@ -171,13 +310,14 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
     let response;
     const formData = new URLSearchParams();
     formData.append("id", firm.id);
-    formData.append(field, value);
+    formData.append(field, cleanValue);
 
     const endpointMap = {
       website: "website",
       scraper: "scraper",
       brands: "brand",
       email: "email",
+      phone: "phone",
     };
     const endpoint = endpointMap[field];
 
@@ -198,20 +338,32 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
     if (!response.ok) throw new Error(`Failed to add ${field}`);
 
     if (Array.isArray(firm[field])) {
-      firm[field].push(value);
+      firm[field].push(cleanValue);
     } else if (firm[field]) {
-      firm[field] = [firm[field], value];
+      firm[field] = [firm[field], cleanValue];
     } else {
-      firm[field] = [value];
+      firm[field] = [cleanValue];
     }
 
-    inputEl.value = firm[field][firm[field].length - 1] || "";
+    let newInputValue = cleanValue;
+    if (field === "phone") {
+      newInputValue = formatPhoneNumber(cleanValue);
+    }
+
+    inputEl.value = newInputValue;
 
     const fieldElement = card.querySelector(`[data-field="${field}"]`);
     if (fieldElement) {
-      fieldElement.innerHTML = `<strong>${field.toUpperCase()}:</strong> ${firm[
-        field
-      ].join(", ")}`;
+      let displayValue;
+      if (Array.isArray(firm[field])) {
+        displayValue = firm[field]
+          .map((item) => createLink(field, item))
+          .join(", ");
+      } else {
+        displayValue = createLink(field, firm[field]);
+      }
+
+      fieldElement.innerHTML = `<strong>${field.toUpperCase()}:</strong> ${displayValue}`;
     }
 
     showFlash(flashArea, `${field} added successfully!`, "success");
@@ -222,13 +374,17 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
 }
 
 async function deleteField(firm, field, value, flashArea, card, inputEl) {
-  // Check authentication before allowing deletions
   if (!window.authManager || !window.authManager.isAuthenticated()) {
     showFlash(flashArea, "Authentication required to modify data", "error");
     return;
   }
 
-  if (!value) {
+  let cleanValue = value;
+  if (field === "phone") {
+    cleanValue = value.replace(/[\s\(\)-]/g, "");
+  }
+
+  if (!cleanValue) {
     showFlash(flashArea, `No ${field} value to delete.`, "error");
     return;
   }
@@ -237,14 +393,14 @@ async function deleteField(firm, field, value, flashArea, card, inputEl) {
     const endpointMap = {
       website: "website",
       email: "email",
+      phone: "phone",
       brands: "brand",
       scraper: "scraper",
     };
     const endpoint = endpointMap[field];
 
-    const payload = { id: firm.id, [field]: value };
+    const payload = { id: firm.id, [field]: cleanValue };
 
-    // Use authenticated fetch for API requests
     let response;
     if (window.authManager.isAuthenticated()) {
       response = await window.authManager.authenticatedFetch(
@@ -256,7 +412,6 @@ async function deleteField(firm, field, value, flashArea, card, inputEl) {
         }
       );
     } else {
-      // Fallback to regular fetch if not authenticated (should not reach here)
       response = await fetch(
         `https://api.peviitor.ro/v6/firme/${endpoint}/delete/`,
         {
@@ -270,22 +425,36 @@ async function deleteField(firm, field, value, flashArea, card, inputEl) {
     if (!response.ok) throw new Error(`Failed to delete ${field}`);
 
     if (Array.isArray(firm[field])) {
-      firm[field] = firm[field].filter((item) => item !== value);
+      firm[field] = firm[field].filter((item) => item !== cleanValue);
     } else {
       firm[field] = null;
     }
 
-    inputEl.value =
+    let newInputValue =
       Array.isArray(firm[field]) && firm[field].length > 0
         ? firm[field][firm[field].length - 1]
         : "";
 
+    if (field === "phone") {
+      newInputValue = formatPhoneNumber(newInputValue);
+    }
+
+    inputEl.value = newInputValue;
+
     const fieldElement = card.querySelector(`[data-field="${field}"]`);
     if (fieldElement) {
-      const displayVal = Array.isArray(firm[field])
-        ? firm[field].join(", ")
-        : firm[field] || "-";
-      fieldElement.innerHTML = `<strong>${field.toUpperCase()}:</strong> ${displayVal}`;
+      let displayVal;
+      if (Array.isArray(firm[field])) {
+        displayVal = firm[field]
+          .map((item) => createLink(field, item))
+          .join(", ");
+      } else {
+        displayVal = createLink(field, firm[field]);
+      }
+
+      fieldElement.innerHTML = `<strong>${field.toUpperCase()}:</strong> ${
+        displayVal || "-"
+      }`;
     }
 
     showFlash(flashArea, `${field} deleted successfully!`, "success");
