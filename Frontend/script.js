@@ -12,28 +12,38 @@ function formatPhoneNumber(value) {
     return cleaned;
   }
 
+  const numDigits = hasPlus ? cleaned.slice(1) : cleaned;
+  const prefix = hasPlus ? cleaned.slice(0, 1) : "";
+
+  let formattedDigits = "";
+  for (let i = 0; i < numDigits.length; i++) {
+    formattedDigits += numDigits[i];
+    if ((i + 1) % 3 === 0 && i !== numDigits.length - 1) {
+      formattedDigits += " ";
+    }
+  }
+
+  const regex =
+    /(\+\d{1,3})?(\d{1,3})?(\d{1,3})?(\d{1,3})?(\d{1,3})?(\d{1,3})?(\d+)?/;
+
   return cleaned
-    .replace(
-      /(\+\d{1,3})?(\d{1,3})?(\d{1,3})?(\d+)?/,
-      (match, p1, p2, p3, p4) => {
-        let result = "";
+    .replace(regex, (match, p1, p2, p3, p4, p5, p6, p7) => {
+      let parts = [p1, p2, p3, p4, p5, p6, p7].filter((p) => p);
+      let result = "";
 
-        if (p1 && p1.startsWith("+")) {
-          result += p1;
-          p2 = p2 || p3 || p4;
-          p3 = p4 ? p3 : null;
-          p4 = p4 ? p4 : null;
-        } else {
-          result += p1 || "";
+      if (parts.length === 0) return "";
+
+      if (parts[0] && parts[0].startsWith("+")) {
+        result += parts.shift();
+        if (parts.length > 0) {
+          result += " " + parts.join(" ");
         }
-
-        if (p2) result += (result ? " " : "") + p2;
-        if (p3) result += " " + p3;
-        if (p4) result += " " + p4;
-
-        return result;
+      } else {
+        result = parts.join(" ");
       }
-    )
+
+      return result;
+    })
     .trim()
     .replace(/\s+/g, " ");
 }
