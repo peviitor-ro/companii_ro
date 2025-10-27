@@ -1,45 +1,41 @@
 function formatPhoneNumber(value) {
-  let cleaned = value.startsWith("+")
-    ? "+" + value.slice(1).replace(/\D/g, "")
-    : value.replace(/\D/g, "");
+  let cleaned = value.replace(/[\s\(\)-]/g, "");
 
-  if (cleaned.length > 3) {
-    if (cleaned.startsWith("+40")) {
-      if (cleaned.length <= 6)
-        return cleaned.slice(0, 3) + " " + cleaned.slice(3);
-      if (cleaned.length <= 9)
-        return (
-          cleaned.slice(0, 3) +
-          " " +
-          cleaned.slice(3, 6) +
-          " " +
-          cleaned.slice(6)
-        );
-      return (
-        cleaned.slice(0, 3) +
-        " " +
-        cleaned.slice(3, 6) +
-        " " +
-        cleaned.slice(6, 9) +
-        " " +
-        cleaned.slice(9, 12)
-      );
-    } else if (cleaned.startsWith("+")) {
-      return cleaned
-        .replace(
-          /(\+\d{1,3})(\d{1,3})?(\d{1,3})?(\d+)?/,
-          (match, p1, p2, p3, p4) => {
-            let result = p1;
-            if (p2) result += " " + p2;
-            if (p3) result += " " + p3;
-            if (p4) result += " " + p4;
-            return result;
-          }
-        )
-        .trim();
-    }
+  const hasPlus = cleaned.startsWith("+");
+  if (hasPlus) {
+    cleaned = "+" + cleaned.slice(1).replace(/\D/g, "");
+  } else {
+    cleaned = cleaned.replace(/\D/g, "");
   }
-  return cleaned;
+
+  if (cleaned.length <= 3) {
+    return cleaned;
+  }
+
+  return cleaned
+    .replace(
+      /(\+\d{1,3})?(\d{1,3})?(\d{1,3})?(\d+)?/,
+      (match, p1, p2, p3, p4) => {
+        let result = "";
+
+        if (p1 && p1.startsWith("+")) {
+          result += p1;
+          p2 = p2 || p3 || p4;
+          p3 = p4 ? p3 : null;
+          p4 = p4 ? p4 : null;
+        } else {
+          result += p1 || "";
+        }
+
+        if (p2) result += (result ? " " : "") + p2;
+        if (p3) result += " " + p3;
+        if (p4) result += " " + p4;
+
+        return result;
+      }
+    )
+    .trim()
+    .replace(/\s+/g, " ");
 }
 
 function createLink(key, value) {
@@ -73,6 +69,12 @@ function createLink(key, value) {
     case "phone":
       href = `tel:${cleanValue}`;
       displayValue = formatPhoneNumber(value);
+      break;
+    case "logo":
+      href = cleanValue.startsWith("http")
+        ? cleanValue
+        : `https://${cleanValue}`;
+      target = "_blank";
       break;
     default:
       return value;
@@ -137,7 +139,7 @@ function displayFirmDetails(firms) {
     const left = document.createElement("div");
     left.className = "card-left";
 
-    const fields = ["website", "email", "phone", "brands", "scraper"];
+    const fields = ["website", "email", "phone", "brands", "logo", "scraper"];
     fields.forEach((field) => {
       const group = document.createElement("div");
       group.className = "input-group";
@@ -219,7 +221,11 @@ function displayFirmDetails(firms) {
 
         if (Array.isArray(value)) {
           const items = value.map((item) => {
-            if (["website", "scraper", "email", "phone"].includes(keyLower)) {
+            if (
+              ["website", "scraper", "email", "logo", "phone"].includes(
+                keyLower
+              )
+            ) {
               return createLink(keyLower, item);
             }
             if (keyLower === "phone") {
@@ -229,10 +235,12 @@ function displayFirmDetails(firms) {
           });
           displayValue = items.join(", ");
         } else {
-          if (["website", "scraper", "email", "phone"].includes(keyLower)) {
+          if (
+            ["website", "scraper", "email", "logo", "phone"].includes(keyLower)
+          ) {
             displayValue = createLink(keyLower, value);
           } else {
-            displayValue = value || "-";
+            displayValue = value || "";
           }
         }
 
@@ -318,6 +326,7 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
       brands: "brand",
       email: "email",
       phone: "phone",
+      logo: "logo",
     };
     const endpoint = endpointMap[field];
 
@@ -395,6 +404,7 @@ async function deleteField(firm, field, value, flashArea, card, inputEl) {
       email: "email",
       phone: "phone",
       brands: "brand",
+      logo: "logo",
       scraper: "scraper",
     };
     const endpoint = endpointMap[field];
