@@ -73,6 +73,13 @@ function createLink(key, value) {
         : `https://${cleanValue}`;
       target = "_blank";
       break;
+    // MODIFICARE: Am adăugat 'career_page'
+    case "career_page":
+      href = cleanValue.startsWith("http")
+        ? cleanValue
+        : `https://${cleanValue}`;
+      target = "_blank";
+      break;
     case "email":
       href = `mailto:${cleanValue}`;
       break;
@@ -149,7 +156,58 @@ function displayFirmDetails(firms) {
     const left = document.createElement("div");
     left.className = "card-left";
 
-    const fields = ["website", "email", "phone", "brands", "logo", "scraper"];
+    const denumireGroup = document.createElement("div");
+    denumireGroup.className = "input-group";
+
+    const denumireLabel = document.createElement("label");
+    denumireLabel.textContent = "Denumire";
+
+    const denumireInput = document.createElement("input");
+    denumireInput.type = "text";
+
+    let initialDenumire =
+      Array.isArray(firm.denumire) && firm.denumire.length > 0
+        ? firm.denumire[0]
+        : firm.denumire || "";
+    denumireInput.value = initialDenumire;
+
+    const denumireBtnGroup = document.createElement("div");
+    denumireBtnGroup.className = "button-group";
+
+    if (window.authManager && window.authManager.isAuthenticated()) {
+      const updateBtn = document.createElement("button");
+      updateBtn.textContent = "Update";
+      updateBtn.onclick = () =>
+        updateDenumire(
+          firm,
+          denumireInput.value,
+          cardFlash,
+          card,
+          denumireInput
+        );
+      denumireBtnGroup.appendChild(updateBtn);
+    } else {
+      const disabledMsg = document.createElement("div");
+      disabledMsg.className = "admin-disabled";
+      disabledMsg.textContent = "Login required for editing";
+      denumireBtnGroup.appendChild(disabledMsg);
+      denumireInput.disabled = true;
+    }
+
+    denumireGroup.appendChild(denumireLabel);
+    denumireGroup.appendChild(denumireInput);
+    denumireGroup.appendChild(denumireBtnGroup);
+    left.appendChild(denumireGroup);
+
+    const fields = [
+      "website",
+      "email",
+      "phone",
+      "brands",
+      "logo",
+      "scraper",
+      "career_page",
+    ];
     fields.forEach((field) => {
       const group = document.createElement("div");
       group.className = "input-group";
@@ -200,12 +258,10 @@ function displayFirmDetails(firms) {
       deleteBtn.onclick = () =>
         deleteField(firm, field, input.value, cardFlash, card, input);
 
-      // Only show admin buttons if authenticated
       if (window.authManager && window.authManager.isAuthenticated()) {
         btnGroup.appendChild(addBtn);
         btnGroup.appendChild(deleteBtn);
       } else {
-        // Show disabled message
         const disabledMsg = document.createElement("div");
         disabledMsg.className = "admin-disabled";
         disabledMsg.textContent = "Login required for editing";
@@ -232,9 +288,14 @@ function displayFirmDetails(firms) {
         if (Array.isArray(value)) {
           const items = value.map((item) => {
             if (
-              ["website", "scraper", "email", "logo", "phone"].includes(
-                keyLower
-              )
+              [
+                "website",
+                "scraper",
+                "email",
+                "logo",
+                "phone",
+                "career_page",
+              ].includes(keyLower)
             ) {
               return createLink(keyLower, item);
             }
@@ -246,7 +307,14 @@ function displayFirmDetails(firms) {
           displayValue = items.join(", ");
         } else {
           if (
-            ["website", "scraper", "email", "logo", "phone"].includes(keyLower)
+            [
+              "website",
+              "scraper",
+              "email",
+              "logo",
+              "phone",
+              "career_page",
+            ].includes(keyLower)
           ) {
             displayValue = createLink(keyLower, value);
           } else {
@@ -337,17 +405,16 @@ async function updateField(firm, field, value, flashArea, card, inputEl) {
       email: "email",
       phone: "phone",
       logo: "logo",
+      career_page: "career_page",
     };
     const endpoint = endpointMap[field];
 
-    // Use authenticated fetch for API requests
     if (window.authManager.isAuthenticated()) {
       response = await window.authManager.authenticatedFetch(
         `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
         { method: "POST", body: formData }
       );
     } else {
-      // Fallback to regular fetch if not authenticated (should not reach here)
       response = await fetch(
         `https://api.peviitor.ro/v6/firme/${endpoint}/add/`,
         { method: "POST", body: formData }
@@ -416,6 +483,7 @@ async function deleteField(firm, field, value, flashArea, card, inputEl) {
       brands: "brand",
       logo: "logo",
       scraper: "scraper",
+      career_page: "career_page",
     };
     const endpoint = endpointMap[field];
 
@@ -483,6 +551,56 @@ async function deleteField(firm, field, value, flashArea, card, inputEl) {
     showFlash(
       flashArea,
       `Failed to delete ${field}: ${error.message}`,
+      "error"
+    );
+  }
+}
+
+async function updateDenumire(firm, newValue, flashArea, card, inputEl) {
+  if (!window.authManager || !window.authManager.isAuthenticated()) {
+    showFlash(flashArea, "Authentication required to modify data", "error");
+    return;
+  }
+
+  if (!newValue || newValue.trim() === "") {
+    showFlash(flashArea, "Denumirea (company name) cannot be empty.", "error");
+    return;
+  }
+
+  try {
+    const formData = new URLSearchParams();
+    formData.append("id", firm.id);
+    formData.append("company", newValue);
+
+    const response = await window.authManager.authenticatedFetch(
+      "https://api.peviitor.ro/v6/firme/company/",
+      {
+        method: "POST",
+        body: formData,
+      }
+    );
+
+    const result = await response.json();
+    if (
+      !response.ok ||
+      (result.responseHeader && result.responseHeader.status !== 0)
+    ) {
+      throw new Error(result.error ? result.error.msg : "Solr update failed");
+    }
+
+    firm.denumire = [newValue];
+
+    const fieldElement = card.querySelector('[data-field="denumire"]');
+    if (fieldElement) {
+      fieldElement.innerHTML = `<strong>DENUMIRE:</strong> ${newValue}`;
+    }
+
+    showFlash(flashArea, "Denumire updated successfully!", "success");
+  } catch (error) {
+    console.error(error);
+    showFlash(
+      flashArea,
+      `Failed to update denumire: ${error.message}`,
       "error"
     );
   }
